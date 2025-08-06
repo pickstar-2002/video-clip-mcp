@@ -4,9 +4,7 @@
   "description": "基于AI MCP协议的视频剪辑工具",
   "main": "dist/index.js",
   "type": "module",
-  "bin": {
-    "video-clip-mcp": "./dist/index.js"
-  },
+  "bin": "./dist/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
