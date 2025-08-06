@@ -1,6 +1,6 @@
 {
   "name": "video-clip-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "基于AI MCP协议的视频剪辑工具",
   "main": "dist/index.js",
   "type": "module",
