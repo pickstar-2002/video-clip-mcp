@@ -1,6 +1,6 @@
 {
   "name": "@pickstar-2002/video-clip-mcp",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "基于AI MCP协议的视频剪辑工具",
   "main": "dist/index.js",
   "type": "module",

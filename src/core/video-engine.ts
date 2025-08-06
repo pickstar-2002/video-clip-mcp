@@ -140,25 +140,27 @@ export class VideoEngine {
       // 确保输出目录存在
       await this.ensureOutputDir(options.outputPath);
 
-      // 修复合并功能 - 使用文件列表方式，更稳定
       return new Promise(async (resolve, reject) => {
         try {
           // 创建临时文件列表
           const tempListPath = path.join(path.dirname(options.outputPath), `temp_list_${taskId}.txt`);
-          const fileList = options.inputPaths.map(p => `file '${path.resolve(p)}'`).join('\n');
+          const fileList = options.inputPaths.map(p => `file '${path.resolve(p).replace(/\\/g, '/')}'`).join('\n');
           await fs.writeFile(tempListPath, fileList, 'utf8');
 
           const command = ffmpeg()
             .input(tempListPath)
             .inputOptions(['-f', 'concat', '-safe', '0'])
-            .outputOptions(['-c', 'copy']) // 使用流复制，避免重新编码
             .output(options.outputPath);
 
-          // 如果需要重新编码，则应用编码参数
-          if (options.videoCodec || options.audioCodec || options.quality) {
+          // 设置编码参数 - 避免使用复杂滤镜
+          if (options.videoCodec || options.audioCodec) {
+            // 需要重新编码
             command.outputOptions(['-c:v', options.videoCodec || 'libx264']);
             command.outputOptions(['-c:a', options.audioCodec || 'aac']);
             this.applyEncodingOptions(command, options);
+          } else {
+            // 使用流复制，更快更稳定
+            command.outputOptions(['-c', 'copy']);
           }
 
           command.on('end', async () => {
@@ -337,7 +339,7 @@ export class VideoEngine {
       command.audioCodec(options.audioCodec);
     }
     
-    // 修复质量预设问题 - 使用FFmpeg原生参数而不是预设文件
+    // 完全修复质量预设问题 - 不使用fluent-ffmpeg的preset方法
     if (options.quality) {
       const qualityMap: { [key: string]: string } = {
         'ultrafast': 'ultrafast',
@@ -352,6 +354,7 @@ export class VideoEngine {
       };
       
       const preset = qualityMap[options.quality] || 'medium';
+      // 直接使用outputOptions而不是preset方法，避免预设文件加载
       command.outputOptions(['-preset', preset]);
     }
     
@@ -414,7 +417,7 @@ export class VideoEngine {
       return pattern
         .replace('{name}', basename)
         .replace('{index}', (index + 1).toString().padStart(3, '0'))
-        .replace('{ext}', ext.startsWith('.') ? ext.slice(1) : ext); // 确保正确处理扩展名
+        .replace('{ext}', ext.startsWith('.') ? ext.slice(1) : ext);
     }
     
     // 修复默认命名模式，避免双点问题
