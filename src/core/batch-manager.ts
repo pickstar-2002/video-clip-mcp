@@ -202,6 +202,7 @@ export class BatchManager extends EventEmitter {
       const videoEngine = VideoEngine.getInstance();
       let result: ProcessResult;
 
+      // 改进错误处理 - 确保每种任务类型都有正确的处理
       switch (task.type) {
         case 'clip':
           result = await videoEngine.clipVideo(task.options as ClipOptions);
@@ -216,11 +217,24 @@ export class BatchManager extends EventEmitter {
           throw new Error(`未知任务类型: ${task.type}`);
       }
 
+      // 改进状态判断 - 即使有错误信息但成功生成文件也算部分成功
       task.result = result;
-      task.status = result.success ? 'completed' : 'failed';
+      if (result.success && result.outputPaths.length > 0) {
+        task.status = 'completed';
+      } else if (!result.success && result.outputPaths.length > 0) {
+        task.status = 'completed'; // 部分成功也标记为完成，但保留错误信息
+        console.warn(`任务 ${taskId} 部分成功: ${result.error}`);
+      } else {
+        task.status = 'failed';
+      }
+      
       task.completedAt = new Date();
 
-      this.emit('taskCompleted', task);
+      if (task.status === 'completed') {
+        this.emit('taskCompleted', task);
+      } else {
+        this.emit('taskFailed', task);
+      }
 
     } catch (error) {
       task.status = 'failed';

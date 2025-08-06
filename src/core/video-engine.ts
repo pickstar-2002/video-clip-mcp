@@ -140,41 +140,59 @@ export class VideoEngine {
       // 确保输出目录存在
       await this.ensureOutputDir(options.outputPath);
 
-      return new Promise((resolve, reject) => {
-        const command = ffmpeg();
+      // 修复合并功能 - 使用文件列表方式，更稳定
+      return new Promise(async (resolve, reject) => {
+        try {
+          // 创建临时文件列表
+          const tempListPath = path.join(path.dirname(options.outputPath), `temp_list_${taskId}.txt`);
+          const fileList = options.inputPaths.map(p => `file '${path.resolve(p)}'`).join('\n');
+          await fs.writeFile(tempListPath, fileList, 'utf8');
 
-        // 添加所有输入文件
-        options.inputPaths.forEach(inputPath => {
-          command.input(inputPath);
-        });
+          const command = ffmpeg()
+            .input(tempListPath)
+            .inputOptions(['-f', 'concat', '-safe', '0'])
+            .outputOptions(['-c', 'copy']) // 使用流复制，避免重新编码
+            .output(options.outputPath);
 
-        // 设置合并参数
-        command
-          .complexFilter([
-            ...options.inputPaths.map((_, i) => `[${i}:v]scale=${options.resolution?.width || -1}:${options.resolution?.height || -1}[v${i}]`),
-            ...options.inputPaths.map((_, i) => `[v${i}][${i}:a]`),
-            `concat=n=${options.inputPaths.length}:v=1:a=1[outv][outa]`
-          ])
-          .outputOptions(['-map', '[outv]', '-map', '[outa]'])
-          .output(options.outputPath);
+          // 如果需要重新编码，则应用编码参数
+          if (options.videoCodec || options.audioCodec || options.quality) {
+            command.outputOptions(['-c:v', options.videoCodec || 'libx264']);
+            command.outputOptions(['-c:a', options.audioCodec || 'aac']);
+            this.applyEncodingOptions(command, options);
+          }
 
-        // 设置编码参数
-        this.applyEncodingOptions(command, options);
-
-        command.on('end', () => {
-          resolve({
-            success: true,
-            outputPaths: [options.outputPath],
-            duration: Date.now() - startTime
+          command.on('end', async () => {
+            // 清理临时文件
+            try {
+              await fs.unlink(tempListPath);
+            } catch (e) {
+              console.warn('清理临时文件失败:', e);
+            }
+            
+            resolve({
+              success: true,
+              outputPaths: [options.outputPath],
+              duration: Date.now() - startTime
+            });
           });
-        });
 
-        command.on('error', (err: any) => {
-          reject(new Error(`视频合并失败: ${err.message}`));
-        });
+          command.on('error', async (err: any) => {
+            // 清理临时文件
+            try {
+              await fs.unlink(tempListPath);
+            } catch (e) {
+              console.warn('清理临时文件失败:', e);
+            }
+            
+            reject(new Error(`视频合并失败: ${err.message}`));
+          });
 
-        this.processingTasks.set(taskId, command);
-        command.run();
+          this.processingTasks.set(taskId, command);
+          command.run();
+          
+        } catch (error) {
+          reject(error);
+        }
       });
 
     } catch (error) {
@@ -203,41 +221,60 @@ export class VideoEngine {
       const videoInfo = await this.getVideoInfo(options.inputPath);
       const segments = this.calculateSplitSegments(videoInfo, options);
       const outputPaths: string[] = [];
+      const errors: string[] = [];
 
-      // 并行处理分割任务
-      const splitPromises = segments.map(async (segment, index) => {
+      // 串行处理分割任务，避免并发导致的FFmpeg异常
+      for (let i = 0; i < segments.length; i++) {
+        const segment = segments[i];
         const outputPath = path.join(
           options.outputDir,
-          this.generateSplitFileName(options.inputPath, index, options.namePattern)
+          this.generateSplitFileName(options.inputPath, i, options.namePattern)
         );
 
-        const clipOptions: ClipOptions = {
-          inputPath: options.inputPath,
-          outputPath,
-          timeSegment: segment,
-          quality: options.quality,
-          videoCodec: options.videoCodec,
-          audioCodec: options.audioCodec
-        };
+        try {
+          const clipOptions: ClipOptions = {
+            inputPath: options.inputPath,
+            outputPath,
+            timeSegment: segment,
+            quality: options.quality,
+            videoCodec: options.videoCodec,
+            audioCodec: options.audioCodec
+          };
 
-        const result = await this.clipVideo(clipOptions);
-        if (result.success) {
-          outputPaths.push(outputPath);
+          const result = await this.clipVideo(clipOptions);
+          if (result.success && result.outputPaths.length > 0) {
+            outputPaths.push(outputPath);
+            
+            // 验证生成的文件是否有效
+            try {
+              const stats = await fs.stat(outputPath);
+              if (stats.size === 0) {
+                errors.push(`分割文件 ${i + 1} 大小为0`);
+              }
+            } catch (statError) {
+              errors.push(`无法验证分割文件 ${i + 1}: ${statError}`);
+            }
+          } else {
+            errors.push(`分割任务 ${i + 1} 失败: ${result.error || '未知错误'}`);
+          }
+        } catch (segmentError) {
+          errors.push(`分割任务 ${i + 1} 异常: ${segmentError instanceof Error ? segmentError.message : '未知错误'}`);
         }
-        return result;
-      });
 
-      const results = await Promise.all(splitPromises);
-      const failedResults = results.filter(r => !r.success);
-
-      if (failedResults.length > 0) {
-        throw new Error(`${failedResults.length} 个分割任务失败`);
+        // 添加短暂延迟，避免FFmpeg进程冲突
+        if (i < segments.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
 
+      const success = outputPaths.length > 0;
+      const errorMessage = errors.length > 0 ? `部分任务失败: ${errors.join('; ')}` : undefined;
+
       return {
-        success: true,
+        success,
         outputPaths,
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
+        error: success ? errorMessage : (errorMessage || '所有分割任务都失败了')
       };
 
     } catch (error) {
@@ -299,9 +336,30 @@ export class VideoEngine {
     if (options.audioCodec) {
       command.audioCodec(options.audioCodec);
     }
+    
+    // 修复质量预设问题 - 使用FFmpeg原生参数而不是预设文件
     if (options.quality) {
-      command.preset(options.quality);
+      const qualityMap: { [key: string]: string } = {
+        'ultrafast': 'ultrafast',
+        'superfast': 'superfast', 
+        'veryfast': 'veryfast',
+        'faster': 'faster',
+        'fast': 'fast',
+        'medium': 'medium',
+        'slow': 'slow',
+        'slower': 'slower',
+        'veryslow': 'veryslow'
+      };
+      
+      const preset = qualityMap[options.quality] || 'medium';
+      command.outputOptions(['-preset', preset]);
     }
+    
+    // 添加更好的编码参数以提高兼容性
+    command.outputOptions([
+      '-movflags', '+faststart', // 优化MP4文件结构
+      '-pix_fmt', 'yuv420p'      // 确保兼容性
+    ]);
   }
 
   private calculateSplitSegments(videoInfo: VideoInfo, options: SplitOptions): TimeSegment[] {
@@ -356,9 +414,10 @@ export class VideoEngine {
       return pattern
         .replace('{name}', basename)
         .replace('{index}', (index + 1).toString().padStart(3, '0'))
-        .replace('{ext}', ext);
+        .replace('{ext}', ext.startsWith('.') ? ext.slice(1) : ext); // 确保正确处理扩展名
     }
     
-    return `${basename}_part${(index + 1).toString().padStart(3, '0')}${ext}`;
+    // 修复默认命名模式，避免双点问题
+    return `segment_${(index + 1).toString().padStart(3, '0')}${ext}`;
   }
 }
