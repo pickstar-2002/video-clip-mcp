@@ -1,6 +1,6 @@
 # 🎬 Video Clip MCP
 
-[![npm version](https://badge.fury.io/js/video-clip-mcp.svg)](https://badge.fury.io/js/video-clip-mcp)
+[![npm version](https://badge.fury.io/js/@pickstar-2002%2Fvideo-clip-mcp.svg)](https://badge.fury.io/js/@pickstar-2002%2Fvideo-clip-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 一个强大的视频剪辑 MCP (Model Context Protocol) 服务器，提供视频处理、剪辑和批量操作功能。
@@ -18,12 +18,12 @@
 
 ### NPM 安装
 ```bash
-npm install -g video-clip-mcp
+npm install -g @pickstar-2002/video-clip-mcp
 ```
 
 ### 使用 npx (推荐)
 ```bash
-npx video-clip-mcp
+npx @pickstar-2002/video-clip-mcp
 ```
 
 ## 🚀 使用方式
