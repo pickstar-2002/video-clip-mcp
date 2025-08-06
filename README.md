@@ -37,7 +37,7 @@ npx @pickstar-2002/video-clip-mcp
   "mcpServers": {
     "video-clip": {
       "command": "npx",
-      "args": ["video-clip-mcp"]
+      "args": ["@pickstar-2002/video-clip-mcp"]
     }
   }
 }
@@ -52,7 +52,7 @@ npx @pickstar-2002/video-clip-mcp
   "mcpServers": {
     "video-clip": {
       "command": "npx",
-      "args": ["video-clip-mcp"],
+      "args": ["@pickstar-2002/video-clip-mcp"],
       "env": {}
     }
   }
@@ -65,7 +65,7 @@ npx @pickstar-2002/video-clip-mcp
 
 ```
 video-clip-mcp:
-  command: npx video-clip-mcp
+  command: npx @pickstar-2002/video-clip-mcp
 ```
 
 ### 4. WindSurf 配置
@@ -76,13 +76,13 @@ video-clip-mcp:
 mcp_servers:
   video-clip:
     command: npx
-    args: [video-clip-mcp]
+    args: [@pickstar-2002/video-clip-mcp]
 ```
 
 ### 5. 编程方式使用
 
 ```typescript
-import { VideoClipMCPServer } from 'video-clip-mcp';
+import { VideoClipMCPServer } from '@pickstar-2002/video-clip-mcp';
 
 const server = new VideoClipMCPServer();
 await server.start();
