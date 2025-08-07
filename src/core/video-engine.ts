@@ -3,9 +3,13 @@
  */
 
 import ffmpeg from 'fluent-ffmpeg';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
+
+// 设置 ffmpeg 二进制文件路径
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 import {
   VideoInfo,
   ClipOptions,

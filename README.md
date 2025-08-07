@@ -4,11 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue.svg)](https://www.typescriptlang.org/)
-[![FFmpeg](https://img.shields.io/badge/FFmpeg-Required-red.svg)](https://ffmpeg.org/)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-Auto%20Install-green.svg)](https://ffmpeg.org/)
 
 ## 📖 项目简介
 
-基于 AI MCP 协议的专业视频剪辑工具，提供高效的视频处理能力和智能化操作体验。
+基于 AI MCP 协议的专业视频剪辑工具，提供高效的视频处理能力和智能化操作体验。无需手动安装 FFmpeg，开箱即用！
 
 ## ✨ 核心功能
 
@@ -23,8 +23,16 @@
 
 ## 📦 安装使用
 
+### 全局安装（推荐）
+
 ```bash
-npm install -g @pickstar-2002/video-clip-mcp
+npm install -g @pickstar-2002/video-clip-mcp@latest
+```
+
+### 临时使用
+
+```bash
+npx @pickstar-2002/video-clip-mcp@latest
 ```
 
 ## 🔧 MCP 服务器配置
@@ -38,7 +46,7 @@ npm install -g @pickstar-2002/video-clip-mcp
   "mcpServers": {
     "video-clip": {
       "command": "npx",
-      "args": ["@pickstar-2002/video-clip-mcp"]
+      "args": ["@pickstar-2002/video-clip-mcp@latest"]
     }
   }
 }
@@ -53,7 +61,7 @@ npm install -g @pickstar-2002/video-clip-mcp
   "mcp": {
     "servers": {
       "video-clip": {
-        "command": "npx @pickstar-2002/video-clip-mcp"
+        "command": "npx @pickstar-2002/video-clip-mcp@latest"
       }
     }
   }
@@ -69,7 +77,7 @@ npm install -g @pickstar-2002/video-clip-mcp
   "mcpServers": {
     "video-clip": {
       "command": "npx",
-      "args": ["@pickstar-2002/video-clip-mcp"],
+      "args": ["@pickstar-2002/video-clip-mcp@latest"],
       "env": {}
     }
   }
@@ -84,8 +92,8 @@ npm install -g @pickstar-2002/video-clip-mcp
 {
   "servers": {
     "video-clip": {
-      "command": "npx @pickstar-2002/video-clip-mcp",
-      "description": "视频剪辑处理工具"
+      "command": "npx @pickstar-2002/video-clip-mcp@latest",
+      "description": "🎬 视频剪辑处理工具"
     }
   }
 }
@@ -100,7 +108,7 @@ npm install -g @pickstar-2002/video-clip-mcp
   "mcpServers": {
     "video-clip": {
       "command": "npx",
-      "args": ["@pickstar-2002/video-clip-mcp"]
+      "args": ["@pickstar-2002/video-clip-mcp@latest"]
     }
   }
 }
@@ -200,7 +208,7 @@ await batchProcess({ tasks });
 - **推荐版本**: Node.js 20.0.0+
 
 ### 系统依赖
-- **FFmpeg**: 必须安装并配置到系统PATH
+- **FFmpeg**: 自动安装（通过 @ffmpeg-installer/ffmpeg 包）
 - **操作系统**: Windows 10+, macOS 10.15+, Linux (Ubuntu 18.04+)
 
 ### 推荐硬件配置
@@ -298,6 +306,83 @@ cancelTask(taskId: string): Promise<boolean>
 getSupportedFormats(): Promise<SupportedFormats>
 ```
 
+## 🚨 疑难解答
+
+### 常见问题及解决方案
+
+#### 1. 🔄 Connection closed 错误
+
+**问题描述**: 使用 `npx` 时出现连接关闭错误
+
+**解决方案**（按推荐顺序）:
+
+**a. 首选方案 - 使用 @latest 标签**
+```bash
+npx @pickstar-2002/video-clip-mcp@latest
+```
+
+**b. 备用方案 - 锁定特定版本**
+```bash
+npx @pickstar-2002/video-clip-mcp@1.2.0
+```
+
+**c. 终极方案 - 清理 npx 缓存**
+```bash
+# Windows
+npx clear-npx-cache
+# 或者手动删除缓存目录
+rmdir /s "%APPDATA%\npm-cache\_npx"
+
+# macOS/Linux
+npx clear-npx-cache
+# 或者手动删除缓存目录
+rm -rf ~/.npm/_npx
+```
+
+#### 2. 🎬 FFmpeg 相关错误
+
+**问题描述**: FFmpeg 执行失败或找不到
+
+**解决方案**:
+- 本工具已内置 FFmpeg，无需手动安装
+- 如果仍有问题，请检查网络连接（首次使用需下载 FFmpeg）
+- 确保有足够的磁盘空间（至少 100MB）
+
+#### 3. 📁 文件路径问题
+
+**问题描述**: 输入或输出文件路径错误
+
+**解决方案**:
+- 使用绝对路径而非相对路径
+- 确保路径中不包含特殊字符
+- Windows 用户注意使用正斜杠 `/` 或双反斜杠 `\\`
+
+#### 4. 🔧 权限问题
+
+**问题描述**: 没有文件读写权限
+
+**解决方案**:
+- 确保对输入文件有读取权限
+- 确保对输出目录有写入权限
+- Windows 用户可能需要以管理员身份运行
+
+#### 5. 💾 内存不足
+
+**问题描述**: 处理大文件时内存溢出
+
+**解决方案**:
+- 降低视频质量设置
+- 分段处理大文件
+- 增加系统虚拟内存
+
+### 📞 获取帮助
+
+如果以上解决方案无法解决您的问题，请：
+
+1. 📋 收集错误信息和系统环境
+2. 🐛 在 [GitHub Issues](https://github.com/pickstar-2002/video-clip-mcp/issues) 提交问题
+3. 💬 联系开发者（见下方联系方式）
+
 ## 🤝 贡献指南
 
 我们欢迎所有形式的贡献！请遵循以下步骤：
@@ -312,7 +397,7 @@ getSupportedFormats(): Promise<SupportedFormats>
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-username/video-clip-mcp.git
+git clone https://github.com/pickstar-2002/video-clip-mcp.git
 cd video-clip-mcp
 
 # 安装依赖
@@ -321,8 +406,8 @@ npm install
 # 构建项目
 npm run build
 
-# 运行测试
-npm test
+# 启动开发模式
+npm run dev
 ```
 
 ## 📄 许可证
@@ -339,18 +424,18 @@ npm test
 - **[TypeScript](https://www.typescriptlang.org/)** - 类型安全的 JavaScript 超集
 - **开源社区** - 所有贡献者和用户的支持
 
-## 📞 联系方式
-
-如有问题或建议，欢迎联系：
-
-**微信**: pickstar_loveXX
-
 ## 🌟 支持项目
 
 如果这个项目对您有帮助，请：
 
 - ⭐ **给项目点个 Star**
 - 🐛 **报告问题和建议** 
-- 📖 **查看详细测试报告**: [测试报告.md](./测试报告.md)
+- 🔄 **分享给更多开发者**
 
 让我们一起打造更好的视频处理工具！🚀
+
+---
+
+## 📞 联系方式
+
+**微信**: pickstar_loveXX
