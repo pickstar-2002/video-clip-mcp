@@ -6,6 +6,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue.svg)](https://www.typescriptlang.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-Auto%20Install-green.svg)](https://ffmpeg.org/)
 
+<a href="https://glama.ai/mcp/servers/@pickstar-2002/video-clip-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@pickstar-2002/video-clip-mcp/badge" alt="Video Clip MCP server" />
+</a>
+
 ## 📖 项目简介
 
 基于 AI MCP 协议的专业视频剪辑工具，提供高效的视频处理能力和智能化操作体验。无需手动安装 FFmpeg，开箱即用！
